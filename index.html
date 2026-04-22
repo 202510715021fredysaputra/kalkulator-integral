@@ -1,1 +1,372 @@
+<!DOCTYPE html>
+<html lang="id">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Integral Tentu - Proyek Kalkulus</title>
+
+    <!-- Tailwind CSS untuk Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Math.js untuk parsing dan perhitungan matematika -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+
+    <!-- KaTeX untuk merender rumus matematika yang indah -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <!-- Chart.js untuk menggambar grafik kurva -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Animasi loading sederhana */
+        
+        .loader {
+            border-top-color: #3b82f6;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xl">
+                    &int;
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Kalkulator Integral
+                </h1>
+            </div>
+            <div class="text-sm text-slate-500 font-medium">
+                Proyek Kalkulus
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Kolom Kiri: Input Form -->
+        <div class="lg:col-span-4 space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg> Masukkan Parameter
+                </h2>
+
+                <div class="space-y-4">
+                    <!-- Input Fungsi -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Fungsi f(x)</label>
+                        <input type="text" id="functionInput" value="x^2 - 4x + 5" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm" placeholder="Contoh: x^2 + 2x - sin(x)">
+                        <p class="text-xs text-slate-500 mt-1">Gunakan operasi standar: +, -, *, /, ^, sin(x), cos(x), e^x</p>
+                    </div>
+
+                    <!-- Input Batas Bawah & Atas -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Batas Bawah (a)</label>
+                            <input type="number" id="lowerLimit" value="0" step="any" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Batas Atas (b)</label>
+                            <input type="number" id="upperLimit" value="4" step="any" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono">
+                        </div>
+                    </div>
+
+                    <!-- Tombol Hitung -->
+                    <button onclick="calculateIntegral()" class="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex justify-center items-center gap-2">
+                        <span>Hitung Sekarang</span>
+                    </button>
+                </div>
+
+                <!-- Pesan Error -->
+                <div id="errorMessage" class="hidden mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <!-- Contoh Fungsi -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-800 mb-3">Contoh Fungsi Uji Coba:</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="setExample('2x', 0, 5)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">2x</button>
+                    <button onclick="setExample('sin(x)', 0, 3.14159)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">sin(x)</button>
+                    <button onclick="setExample('e^x', 0, 2)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">e^x</button>
+                    <button onclick="setExample('1/x', 1, 10)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">1/x</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Hasil & Grafik -->
+        <div class="lg:col-span-8 space-y-6">
+
+            <!-- Kartu Hasil -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg> Hasil Perhitungan
+                </h2>
+
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-100 text-center relative overflow-hidden">
+                    <div id="loadingIndicator" class="hidden absolute inset-0 bg-slate-50/80 flex items-center justify-center z-10">
+                        <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10"></div>
+                    </div>
+
+                    <!-- Notasi Matematika KaTeX -->
+                    <div class="overflow-x-auto pb-4">
+                        <div id="mathFormula" class="text-2xl md:text-3xl text-slate-800 py-4"></div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-200">
+                        <p class="text-sm text-slate-500 mb-1">Luas Area / Nilai Integral:</p>
+                        <div id="resultValue" class="text-3xl font-extrabold text-blue-600">0.0000</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kartu Grafik -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg> Visualisasi Area Kurva
+                </h2>
+                <div class="w-full h-[400px] relative">
+                    <canvas id="integralChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center text-sm text-slate-500">
+            Dibuat untuk Memenuhi Tugas Proyek Kalkulus &copy; 2023/2024
+        </div>
+    </footer>
+
+    <script>
+        let myChart = null;
+
+        // Fungsi Integrasi Numerik menggunakan Aturan Simpson 1/3 (Sangat Akurat)
+        function simpsonIntegration(f, a, b, n = 1000) {
+            if (n % 2 !== 0) n++; // n harus genap
+            const h = (b - a) / n;
+            let sum = f(a) + f(b);
+
+            for (let i = 1; i < n; i++) {
+                const x = a + i * h;
+                sum += f(x) * (i % 2 === 0 ? 2 : 4);
+            }
+            return (h / 3) * sum;
+        }
+
+        function setExample(func, a, b) {
+            document.getElementById('functionInput').value = func;
+            document.getElementById('lowerLimit').value = a;
+            document.getElementById('upperLimit').value = b;
+            calculateIntegral();
+        }
+
+        function drawChart(f, a, b) {
+            const ctx = document.getElementById('integralChart').getContext('2d');
+
+            // Hapus chart lama jika ada
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            // Menentukan rentang sumbu X untuk grafik (diberi margin kiri kanan)
+            const margin = Math.max(Math.abs(b - a) * 0.3, 2);
+            const xMin = a - margin;
+            const xMax = b + margin;
+
+            const points = 200; // Resolusi garis grafik
+            const step = (xMax - xMin) / points;
+
+            const labels = [];
+            const dataLine = [];
+            const dataFill = [];
+
+            for (let x = xMin; x <= xMax; x += step) {
+                labels.push(x.toFixed(2));
+
+                try {
+                    const y = f(x);
+                    dataLine.push(y);
+
+                    // Hanya isi dataFill jika berada di antara batas a dan b (untuk arsiran)
+                    if (x >= a && x <= b) {
+                        dataFill.push(y);
+                    } else {
+                        dataFill.push(null);
+                    }
+                } catch (e) {
+                    dataLine.push(null);
+                    dataFill.push(null);
+                }
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Area Integral',
+                        data: dataFill,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.4)', // Biru transparan untuk arsiran
+                        borderColor: 'transparent',
+                        pointRadius: 0,
+                        tension: 0.4
+                    }, {
+                        label: 'f(x)',
+                        data: dataLine,
+                        borderColor: '#1e293b', // Warna garis kurva
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => 'x: ' + tooltipItems[0].label,
+                                label: (context) => 'y: ' + context.parsed.y.toFixed(4)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: (context) => context.tick.value === 0 ? '#94a3b8' : '#e2e8f0',
+                                lineWidth: (context) => context.tick.value === 0 ? 2 : 1
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: (context) => context.tick.value === 0 ? '#94a3b8' : '#e2e8f0',
+                                lineWidth: (context) => context.tick.value === 0 ? 2 : 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateIntegral() {
+            const funcStr = document.getElementById('functionInput').value.toLowerCase();
+            const a = parseFloat(document.getElementById('lowerLimit').value);
+            const b = parseFloat(document.getElementById('upperLimit').value);
+            const errorDiv = document.getElementById('errorMessage');
+
+            errorDiv.classList.add('hidden');
+
+            if (!funcStr) {
+                showError("Mohon masukkan fungsi matematika.");
+                return;
+            }
+            if (isNaN(a) || isNaN(b)) {
+                showError("Mohon masukkan batas bawah dan batas atas yang valid (angka).");
+                return;
+            }
+            if (a > b) {
+                showError("Batas bawah (a) harus lebih kecil atau sama dengan batas atas (b) untuk kalkulator ini.");
+                return;
+            }
+
+            try {
+                // Compile fungsi menggunakan math.js
+                const node = math.parse(funcStr);
+                const code = node.compile();
+
+                // Fungsi penolong untuk mengevaluasi f(x)
+                const f = (x) => {
+                    const result = code.evaluate({
+                        x: x
+                    });
+                    if (typeof result !== 'number' || isNaN(result)) {
+                        throw new Error("Hasil tidak terdefinisi pada x=" + x);
+                    }
+                    return result;
+                };
+
+                // Uji fungsi apakah berjalan
+                f((a + b) / 2);
+
+                // Hitung Integral Numerik
+                const result = simpsonIntegration(f, a, b);
+
+                // Tampilkan Nilai Hasil
+                document.getElementById('resultValue').innerText = result.toFixed(6);
+
+                // Tampilkan Rumus Matematika Cantik menggunakan KaTeX
+                // Konversi string input ke LaTeX format (Math.js punya fungsi bawaan ini)
+                const latexFunc = math.parse(funcStr).toTex();
+                const texString = `\\int_{${a}}^{${b}} \\left( ${latexFunc} \\right) \\, dx`;
+
+                katex.render(texString, document.getElementById('mathFormula'), {
+                    throwOnError: false,
+                    displayMode: true
+                });
+
+                // Gambar Grafik dengan Area
+                drawChart(f, a, b);
+
+            } catch (error) {
+                console.error(error);
+                showError("Kesalahan pada fungsi: Pastikan penulisan matematika benar. (Contoh: gunakan 2*x bukan 2x, x^2 bukan x2)");
+            }
+        }
+
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerText = msg;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // Jalankan perhitungan pertama kali saat halaman dimuat
+        window.onload = () => {
+            calculateIntegral();
+        };
+    </script>
+</body>
+
+</html>
